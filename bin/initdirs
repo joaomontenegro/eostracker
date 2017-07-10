@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -z $EOS_TRACKER_HOME ]; then
+    echo "EOS_TRACKER_HOME env var not set"
+    exit 1
+fi
+
+echo Creating dirs under $EOS_TRACKER_HOME
+
+mkdir -p $EOS_TRACKER_HOME/logs
+mkdir -p $EOS_TRACKER_HOME/json
+mkdir -p $EOS_TRACKER_HOME/html
+mkdir -p $EOS_TRACKER_HOME/pidfile
+

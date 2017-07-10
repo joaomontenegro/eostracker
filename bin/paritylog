@@ -1,0 +1,4 @@
+#!/bin/sh
+
+tail -f `ls -t ~/logs/parity_*.log | head -1`
+

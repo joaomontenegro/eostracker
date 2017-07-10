@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if  pgrep -x "parity" > /dev/null ; then
+    echo "Parity is already running..."
+    exit 0
+else
+    echo "Parity not running. Launching Parity!"
+    DATE=$(date +"%Y_%m_%d_%H_%M")
+    parity daemon /home/ubuntu/pidfile/parity.pid --log-file /home/ubuntu/logs/parity_$DATE.log
+    exit 0
+fi
+
+
+

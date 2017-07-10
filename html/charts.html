@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+/* set the CSS */
+
+.axis {
+    font: 14px sans-serif;
+}
+
+.line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 2px;
+}
+</style>
+
+<body>
+    <p>
+        <select id="mySelect" onchange="makeGraph();">
+        </select>
+    </p>
+          <div id="message"> </div>
+    <div id="chart"> </div>
+    <!-- load the d3.js library -->
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script>
+    var list = [];
+    for (var i = 0; i <= 365; i++) {
+        list.push(i);
+    }
+    $.each(list, function(key, value) {
+        $('#mySelect')
+            .append($('<option>', {
+                    value: key
+                })
+                .text(value));
+    });
+
+    makeGraph();
+
+    function pad(str, max) {
+        str = str.toString();
+        return str.length < max ? pad("0" + str, max) : str;
+    }
+
+    function makeGraph() {
+
+
+        // set the dimensions and margins of the graph
+        var margin = {
+                top: 20,
+                right: 20,
+                bottom: 70,
+                left: 50
+            },
+            width = 1200 - margin.left - margin.right,
+            height = 700 - margin.top - margin.bottom;
+
+        // parse the date / time
+        var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+
+        // set the ranges
+        var x = d3.scaleTime().range([0, width]);
+        var y = d3.scaleLinear().range([height, 0]);
+
+        // define the line
+        var valueline = d3.line()
+            .x(function(d) {
+                return x(d.date);
+            })
+            .y(function(d) {
+                return y(d.value);
+            });
+
+        // append the svg obgect to the body of the page
+        // appends a 'group' element to 'svg'
+        // moves the 'group' element to the top left margin
+        d3.select("svg").selectAll("*").remove();
+        d3.select("svg").remove();
+        var svg = d3.select("#chart").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        // Get the data
+        d3.json("/json/window_" + pad($('#mySelect').find(":selected").text(), 3) + ".json", function(error, data) {
+            if (error) {
+                console.log(error);
+                $("#message").html("<span style=\"color:red\">" + error.srcElement.responseURL + " " + error.srcElement.status + " " + error.srcElement.statusText + "</span>");
+                return;
+                //throw error;
+            } else {
+                $("#message").html("");
+            }
+                
+
+            //console.log(data);
+            //console.log(Object.keys(data));
+            console.log(Object.keys(data)[0] + " " + data[Object.keys(data)[0]][0] + " " + data[Object.keys(data)[0]][1]);
+
+            // format the data
+            var arrData = [];
+            $.each(data, function(i, item) {
+                arrData.push({
+                    "date": parseTime(i),
+                    "value": +item
+                });
+                //i = parseTime(i);
+                //item[1] = +item[1];
+            });
+            console.log(arrData);
+            // Scale the range of the data
+            x.domain(d3.extent(arrData, function(d) {
+                return d.date;
+            }));
+            y.domain([0, d3.max(arrData, function(d) {
+                return d.value;
+            })]);
+            //y.domain([0, 10000]);
+
+            // Add the valueline path.
+            svg.append("path")
+                .data([arrData])
+                .attr("class", "line")
+                .attr("d", valueline);
+
+            // Add the X Axis
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            // Add the Y Axis
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+
+        });
+    }
+    </script>
+</body>

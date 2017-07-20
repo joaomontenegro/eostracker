@@ -16,7 +16,7 @@ class EOSContract (EthConnection):
         Constructor.
         Takes your account address.
         '''
-        EthConnection.__init__(self, host='localhost', port='8545')
+        EthConnection.__init__(self, host, port)
 
         self.eosContract = None
         self.myAddr = myAddr

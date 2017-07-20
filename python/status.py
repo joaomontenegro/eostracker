@@ -11,7 +11,7 @@ percent = 0
 memory = psutil.virtual_memory().percent
 
 try:
-    web3 = Web3(KeepAliveRPCProvider(host='localhost', port='8545'))
+    web3 = Web3(KeepAliveRPCProvider(host='eostracker.com', port='8545'))
     sync = web3.eth.syncing
     if sync:
         currentBlock = web3.eth.syncing.get('currentBlock', 0)

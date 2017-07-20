@@ -1,143 +1,485 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<style>
-/* set the CSS */
 
-.axis {
-    font: 14px sans-serif;
-}
-
-.line {
-    fill: none;
-    stroke: steelblue;
-    stroke-width: 2px;
-}
-</style>
+<head>
+    <link type="text/css" rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css">
+    <!-- <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.6.0/rickshaw.css">
+    -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" type="text/css">
+    <link type="text/css" rel="stylesheet" href="/code/graph2.css">
+    <!-- <link type="text/css" rel="http://code.shutterstock.com/rickshaw/examples/css/extensions.css?v=2">
+     -->
+    <!-- load the d3.js library -->
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.0.1/d3.v3.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.5.0/async.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.6.0/rickshaw.js"></script>
+    
+    <!--     <script src="http://code.shutterstock.com/rickshaw/examples/js/extensions.js"></script>
+ -->
+    <style>
+    .rickshaw_graph .detail .x_label {
+        display: none
+    }
+    
+    .rickshaw_graph .detail .item {
+        line-height: 1.4;
+        padding: 0.5em
+    }
+    
+    .detail_swatch {
+        float: right;
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 0 4px 0 0
+    }
+    
+    .rickshaw_graph .detail .date {
+        color: #a0a0a0
+    }
+    </style>
+</head>
 
 <body>
-    <p>
-        <select id="mySelect" onchange="makeGraph();">
+<p>
+    <select style="width: 30%" id="mySelect" class="js-example-basic-multiple" multiple="multiple" onchange="main();">
+            <!--  -->
         </select>
-    </p>
-          <div id="message"> </div>
-    <div id="chart"> </div>
-    <!-- load the d3.js library -->
-    <script src="https://d3js.org/d3.v4.js"></script>
-    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    
+</p>
+    <div id="content" width="100%">
+        <!-- <form id="side_panel">
+            <h1>Random Data in the Future</h1>
+            <section>
+                <div id="legend"></div>
+            </section>
+            <section>
+                <div id="renderer_form" class="toggler">
+                    <input type="radio" name="renderer" id="area" value="area" checked>
+                    <label for="area">area</label>
+                    <input type="radio" name="renderer" id="bar" value="bar">
+                    <label for="bar">bar</label>
+                    <input type="radio" name="renderer" id="line" value="line">
+                    <label for="line">line</label>
+                    <input type="radio" name="renderer" id="scatter" value="scatterplot">
+                    <label for="scatter">scatter</label>
+                </div>
+            </section>
+            <section>
+                <div id="offset_form">
+                    <label for="stack">
+                        <input type="radio" name="offset" id="stack" value="zero" checked>
+                        <span>stack</span>
+                    </label>
+                    <label for="stream">
+                        <input type="radio" name="offset" id="stream" value="wiggle">
+                        <span>stream</span>
+                    </label>
+                    <label for="pct">
+                        <input type="radio" name="offset" id="pct" value="expand">
+                        <span>pct</span>
+                    </label>
+                    <label for="value">
+                        <input type="radio" name="offset" id="value" value="value">
+                        <span>value</span>
+                    </label>
+                </div>
+                <div id="interpolation_form">
+                    <label for="cardinal">
+                        <input type="radio" name="interpolation" id="cardinal" value="cardinal" checked>
+                        <span>cardinal</span>
+                    </label>
+                    <label for="linear">
+                        <input type="radio" name="interpolation" id="linear" value="linear">
+                        <span>linear</span>
+                    </label>
+                    <label for="step">
+                        <input type="radio" name="interpolation" id="step" value="step-after">
+                        <span>step</span>
+                    </label>
+                </div>
+            </section>
+            <section>
+                <h6>Smoothing</h6>
+                <div id="smoother"></div>
+            </section>
+            <section></section>
+        </form> -->
+        <div id="chart_container">
+            <div id="chart"></div>
+            <div id="legend_container">
+                <div id="smoother" title="Smoothing"></div>
+                <div id="legend"></div>
+            </div>
+            <div id="preview"></div>
+        </div>
+    </div>
     <script>
-    var list = [];
-    for (var i = 0; i <= 365; i++) {
-        list.push(i);
-    }
-    $.each(list, function(key, value) {
-        $('#mySelect')
-            .append($('<option>', {
-                    value: key
-                })
-                .text(value));
+    var series = [],
+        ajaxRequests = [],
+        ajaxRequestsAuxData = [];
+    var passedWindow, yMax;
+    var eosPerPeriod = 2000000;
+    var icoStart = "2017-07-01 13:00:00";
+
+
+    $(document).ready(function() {
+        var duration = moment(moment(), "YYYY-MM-DD HH:mm:ss").diff(moment(icoStart, "YYYY-MM-DD HH:mm:ss"));
+        var icoPeriod = Math.ceil(moment.duration(duration).asDays());
+
+
+
+        var palette = new Rickshaw.Color.Palette({
+            scheme: 'classic9'
+        });
+        console.log("ICO PERIOD" + icoPeriod);
+
+        var qs = getUrlVars();
+
+        if (qs != null) {
+            if (qs.window != null)
+                passedWindow = qs.window;
+        }
+
+        if (qs != null) {
+            if (qs.yMax != null)
+                yMax = qs.yMax;
+            else
+                yMax = 30000;
+        }
+
+        var list = [];
+        for (var i = 0; i <= 360; i++) {
+            list.push(i);
+        }
+        var i = 0;
+        $.each(list, function(key, value) {
+            if (passedWindow == i || (passedWindow == null && icoPeriod == i)) {
+                $('#mySelect')
+                    .append($('<option selected>', {
+                            value: key
+                        })
+                        .text(value));
+            } else {
+                $('#mySelect')
+                    .append($('<option>', {
+                            value: key
+                        })
+                        .text(value));
+            }
+            i++;
+        });
+
+
+
+        if (passedWindow != null) {
+            $('#mySelect').change();
+        }
+        $(".js-example-basic-multiple").select2();
+
+        main();
     });
 
-    makeGraph();
+    var palette = new Rickshaw.Color.Palette({
+        scheme: 'classic9'
+    });
+
+    function main() {
+        series = [];
+        masterArray = new Array(1380);
+        asyncFillSeries();
+        makeGraph();
+
+    }
+
+    function asyncFillSeries() {
+        var selectedValue = $('#mySelect').val();
+        console.log("SELECTED PERIODS " + selectedValue);
+        var urls = [],
+            periods = [];
+        $.each(selectedValue, function(i, item) {
+            var paddedItem = pad(item, 3);
+            var icoStartNow = icoStart;
+
+            for (var i = 1; i < item; i++) {
+                icoStartNow = moment(icoStartNow, "YYYY-MM-DD HH:mm:ss").add(23, 'hours');
+            }
+            console.log("ICO START NOW" + icoStartNow);
+
+            console.log("getting promise JSON " + "/json/window_" + paddedItem + ".json");
+            urls.push({
+                url: "/json/aggregated_window_" + paddedItem + ".json",
+                period: item
+            });
+            //ajaxRequestsAuxData.push(icoStartNow);
+        });
+
+        var getJSON = function(urlStruct, callback) {
+            console.log(urlStruct.url + " " + urlStruct.period);
+            $.getJSON(urlStruct.url)
+                .error(function(jqXHR, textStatus, errorThrown) {
+                    return callback(errorThrown);
+                })
+                .success(function(data) {
+                    console.log('woo ' + urlStruct.url + ' found')
+                    addDataToSeries(urlStruct.period, data);
+                    return callback();
+                });
+
+        }
+
+        var addDataToSeries = function(period, dataArgs) {
+            console.log("got data " + dataArgs);
+            var icoPeriod = period;
+            var icoStartNow = icoStart;
+
+            //compensation for aggregated files, always starts at the same time
+            //var icoStartNow = "2017-07-07 07:00:00"
+
+
+            for (var i = 1; i < icoPeriod; i++) {
+                icoStartNow = moment(icoStartNow, "YYYY-MM-DD HH:mm:ss").add(23, 'hours');
+            }
+
+
+            console.log("calculated ico start" + icoStartNow.toString());
+            var arrData = [],
+                arrData2 = [];;
+            var dummyData = [];
+            $.each(dataArgs, function(i, item) {
+                var convertedDate = moment.duration(moment(i, "YYYY-MM-DD HH:mm:ss").diff(moment(icoStartNow, "YYYY-MM-DD HH:mm:ss")));
+                var interval = convertedDate.asHours();
+
+                arrData.push({
+                    "x": +interval,
+                    "y": +item
+                });
+                dummyData.push({
+                    "x": 0,
+                    "y": null
+                });
+
+
+                //var convertedDate = moment(i, "YYYY-MM-DD HH:mm:ss").unix();
+                //if(lastValue != null && lastValue >= convertedDate)
+                //    convertedDate++;
+                //var lastValue = convertedDate;
+                //i = parseTime(i);
+                //item[1] = +item[1];
+
+            });
+
+            dummyData[dummyData.length - 1] = {
+                "x": 23,
+                "y": null
+            };
+
+            $.each(arrData, function(i, item) {
+                if (item != null)
+                    item.y = item.y * 1.0 / eosPerPeriod;
+                //var lastValue = convertedDate;
+                //i = parseTime(i);
+                //item[1] = +item[1];
+            });
+
+            console.log("arrData l" + arrData.length);
+
+            console.log("dummyData l" + dummyData.length);
+
+            series.push({
+                name: "dummy",
+                data: dummyData
+            });
+            series.push({
+                color: palette.color(),
+                data: arrData,
+                name: 'ETH/EOS'
+            });
+        }
+
+        async.forEach(urls, getJSON, function(error) {
+            if (error) {
+                console.log('oh no errors!')
+            } else {
+                console.log('YAAAAAAY');
+                makeGraph();
+            }
+        });
+    }
+
+
+
+    function makeGraph() {
+        if (series.length > 0) {
+
+            clearGraph();
+            //Rickshaw.Series.fill(series, null);
+            var graph = new Rickshaw.Graph({
+                element: document.getElementById("chart"),
+                width: 900,
+                height: 500,
+                renderer: 'line',
+                //interpolation: 'basis',
+                max: yMax / eosPerPeriod,
+                series: series,
+                stack: false
+            });
+            //graph.renderer.unstack = true;
+            graph.render();
+
+
+            var preview = new Rickshaw.Graph.RangeSlider.Preview({
+                graph: graph,
+                element: document.getElementById('preview'),
+            });
+
+            var hoverDetail = new Rickshaw.Graph.HoverDetail({
+                graph: graph,
+                formatter: function(series, x, y) {
+                    if (series.name != "dummy") {
+                        var date = '<span class="date">' + "hour " + x + '</span>';
+                        var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
+                        var content = swatch + series.name + ": " + y * eosPerPeriod + '<br>' + date;
+                        return content;
+                    }
+                }
+            });
+
+            /*
+            var hoverDetail = new Rickshaw.Graph.HoverDetail({
+                graph: graph,
+                xFormatter: function(x) {
+                    return "hour " + x;
+                },
+                yFormatter: function(x) {
+                    return x * eosPerPeriod;
+                }
+            });
+            */
+
+           /* var annotator = new Rickshaw.Graph.Annotate({
+                graph: graph,
+                element: document.getElementById('timeline')
+            });*/
+
+            /*
+            var legend = new Rickshaw.Graph.Legend({
+                graph: graph,
+                element: document.getElementById('legend')
+
+            });
+
+            var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+                graph: graph,
+                legend: legend
+            });
+
+            var order = new Rickshaw.Graph.Behavior.Series.Order({
+                graph: graph,
+                legend: legend
+            });
+
+            var highlighter = new Rickshaw.Graph.Behavior.Series.Highlight({
+                graph: graph,
+                legend: legend
+            });
+
+            var smoother = new Rickshaw.Graph.Smoother({
+                graph: graph,
+                element: document.querySelector('#smoother')
+            });
+            */
+            var ticksTreatment = 'glow';
+
+            /*
+            var xAxis = new Rickshaw.Graph.Axis.Time({
+                graph: graph,
+                ticksTreatment: ticksTreatment,
+                timeFixture: new Rickshaw.Fixtures.Time.Local()
+            });
+            */
+
+            function xAxisFormat(d) {
+                return d != null ? d.toFixed(2) : null;
+            }
+
+            var xAxis = new Rickshaw.Graph.Axis.X({
+                graph: graph,
+                ticksTreatment: ticksTreatment //,
+                    //    timeFixture: new Rickshaw.Fixtures.Time.Local()
+            });
+            xAxis.render();
+
+            //var scale = d3.scale.linear().domain([0, 20000]).nice();
+
+            function yAxisFormat(d) {
+                return d != null ? d.toFixed(5) : null;
+            }
+
+            var yAxis = new Rickshaw.Graph.Axis.Y /*.Scaled*/ ({
+                graph: graph,
+                tickFormat: yAxisFormat, //Rickshaw.Fixtures.Number.formatKMBT,
+                ticksTreatment: ticksTreatment //, //, //,
+                    //scale: logScale //,
+                    //  scale: scale
+            });
+
+            yAxis.render();
+        }
+    }
 
     function pad(str, max) {
         str = str.toString();
         return str.length < max ? pad("0" + str, max) : str;
     }
 
-    function makeGraph() {
-
-
-        // set the dimensions and margins of the graph
-        var margin = {
-                top: 20,
-                right: 20,
-                bottom: 70,
-                left: 50
-            },
-            width = 1200 - margin.left - margin.right,
-            height = 700 - margin.top - margin.bottom;
-
-        // parse the date / time
-        var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
-
-        // set the ranges
-        var x = d3.scaleTime().range([0, width]);
-        var y = d3.scaleLinear().range([height, 0]);
-
-        // define the line
-        var valueline = d3.line()
-            .x(function(d) {
-                return x(d.date);
-            })
-            .y(function(d) {
-                return y(d.value);
-            });
-
-        // append the svg obgect to the body of the page
-        // appends a 'group' element to 'svg'
-        // moves the 'group' element to the top left margin
-        d3.select("svg").selectAll("*").remove();
-        d3.select("svg").remove();
-        var svg = d3.select("#chart").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
-
-        // Get the data
-        d3.json("/json/window_" + pad($('#mySelect').find(":selected").text(), 3) + ".json", function(error, data) {
-            if (error) {
-                console.log(error);
-                $("#message").html("<span style=\"color:red\">" + error.srcElement.responseURL + " " + error.srcElement.status + " " + error.srcElement.statusText + "</span>");
-                return;
-                //throw error;
-            } else {
-                $("#message").html("");
-            }
-                
-
-            //console.log(data);
-            //console.log(Object.keys(data));
-            console.log(Object.keys(data)[0] + " " + data[Object.keys(data)[0]][0] + " " + data[Object.keys(data)[0]][1]);
-
-            // format the data
-            var arrData = [];
-            $.each(data, function(i, item) {
-                arrData.push({
-                    "date": parseTime(i),
-                    "value": +item
-                });
-                //i = parseTime(i);
-                //item[1] = +item[1];
-            });
-            console.log(arrData);
-            // Scale the range of the data
-            x.domain(d3.extent(arrData, function(d) {
-                return d.date;
-            }));
-            y.domain([0, d3.max(arrData, function(d) {
-                return d.value;
-            })]);
-            //y.domain([0, 10000]);
-
-            // Add the valueline path.
-            svg.append("path")
-                .data([arrData])
-                .attr("class", "line")
-                .attr("d", valueline);
-
-            // Add the X Axis
-            svg.append("g")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x));
-
-            // Add the Y Axis
-            svg.append("g")
-                .call(d3.axisLeft(y));
-
-
-        });
+    function getUrlVars() {
+        var vars = [],
+            hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for (var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
     }
+
+    function clearGraph() {
+        $('#legend').empty();
+        $('#chart_container').html(
+            '<div id="chart"></div> <div id="legend_container"><div id="smoother" title="Smoothing"></div><div id="legend"></div></div><div id="preview"></div>'
+        );
+
+    }
+
+    /**
+     * Load multiple JSON files.
+     *
+     * Example usage:
+     *
+     * jQuery.getMultipleJSON('file1.json', 'file2.json')
+     *   .fail(function(jqxhr, textStatus, error){})
+     *   .done(function(file1, file2){})
+     * ;
+     */
+    jQuery.getMultipleJSON = function() {
+        return jQuery.when.apply(jQuery, jQuery.map(arguments, function(jsonfile) {
+            return jQuery.getJSON(jsonfile);
+        })).then(function() {
+            var def = jQuery.Deferred();
+            return def.resolve.apply(def, jQuery.map(arguments, function(response) {
+                return response[0];
+            }));
+        });
+    };
+
+
+
+    //var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
     </script>
 </body>

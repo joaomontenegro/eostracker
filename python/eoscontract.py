@@ -194,3 +194,4 @@ def __test(addr, password):
         print("Buying...")
         #eos.buy(0.0001, password)
         print( "Bought!")
+

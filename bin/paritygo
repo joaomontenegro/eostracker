@@ -6,7 +6,7 @@ if  pgrep -x "parity" > /dev/null ; then
 else
     echo "Parity not running. Launching Parity!"
     DATE=$(date +"%Y_%m_%d_%H_%M")
-    parity daemon /home/ubuntu/pidfile/parity.pid --log-file /home/ubuntu/logs/parity_$DATE.log
+    parity daemon /home/ubuntu/pidfile/parity.pid --pruning fast --log-file /home/ubuntu/logs/parity_$DATE.log --rpcapi="eth,net,web3,personal,web3" --jsonrpc-interface all --jsonrpc-hosts all
     exit 0
 fi
 

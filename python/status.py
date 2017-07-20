@@ -1,5 +1,3 @@
-# @Copyright Joao Montenegro 2017
-
 from web3 import Web3, KeepAliveRPCProvider
 from datetime import datetime
 import os, sys, psutil

@@ -129,3 +129,4 @@ class EthConnection:
     def sendTransaction(self, fromAddr, toAddr, ether=None, gas=None):
         tx = self.initTransaction(fromAddr, toAddr, ether, gas)
         return self.web3.eth.sendTransaction(tx)
+

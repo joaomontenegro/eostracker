@@ -1,5 +1,3 @@
-# @Copyright Joao Montenegro 2017
-
 import os, json
 from datetime import (datetime, timedelta)
 
@@ -48,7 +46,7 @@ def getCurrentWindow():
 
 #### Window Json files ####
 def getJsonDir():
-    return os.environ.get('EOS_TRACKER_JSON_DIR', os.path.realpath('../../json/'))
+    return os.environ.get('EOS_TRACKER_JSON_DIR', os.path.realpath('/home/ubuntu/json/'))
 
 def getJsonFileForWindow(window):
     return os.path.join(getJsonDir(), 'window_%03d.json' % window)
@@ -88,6 +86,9 @@ def aggregateJson(window, delta=1):
         values = []
 
         while True:
+            if i >= len(sortedData):
+                break;
+
             (dt, value) = sortedData[i]
 
             if dt < intervalStart:
@@ -117,7 +118,7 @@ def exportAggregatedJson(filepath, window, delta=1):
         intervalsDict = {}
         previous = 0
 
-        for (dt, values) in aggregateJson(7, 1):
+        for (dt, values) in aggregateJson(window, 1):
             if not values:
                 maxValue = previous
             else:
@@ -153,3 +154,4 @@ def __testAggregation():
 
     print("Saving aggregated_window_007.json")
     exportAggregatedJson("aggregated_window_007.json", 7, 1)
+
